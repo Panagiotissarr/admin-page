@@ -238,7 +238,7 @@ export default function AdminPage() {
                     disabled={isLoading}
                     className="rounded-full border border-white/10 bg-white/5 px-3 py-1 pr-7 text-xs hover:bg-white/10 disabled:opacity-50 relative"
                   >
-                    {p.label}
+                    {p.title}
                     <span
                       onClick={(e) => { e.stopPropagation(); removePreset(p.id); }}
                       className="absolute right-1.5 top-1/2 -translate-y-1/2 hidden group-hover:block text-red-400 hover:text-red-300 cursor-pointer"
