@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { projects } from "@/lib/projects";
+import { useAuth } from "@/lib/auth-context";
 
 function getGreeting(): { label: string; icon: string } {
   const hour = new Date().getHours();
@@ -11,6 +12,7 @@ function getGreeting(): { label: string; icon: string } {
 }
 
 export default function DashboardPage() {
+  const { logout } = useAuth();
   const [greeting, setGreeting] = useState({ label: "", icon: "" });
   const [mounted, setMounted] = useState(false);
 
@@ -51,6 +53,13 @@ export default function DashboardPage() {
             </a>
           ))}
         </div>
+
+        <button
+          onClick={logout}
+          className="w-full rounded-md border border-white/10 bg-white/5 px-4 py-2 text-xs font-medium text-white/40 hover:bg-white/10 hover:text-white/70 transition-colors"
+        >
+          Lock
+        </button>
       </div>
     </div>
   );

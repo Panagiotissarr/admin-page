@@ -55,7 +55,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const envPassword = String(process.env.ADMIN_PASSWORD || "").trim();
+  const envPassword = String(
+    process.env.ADMIN_PASSWORD || process.env.admin_password || ""
+  ).trim();
 
   if (!envPassword) {
     return NextResponse.json(
