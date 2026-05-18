@@ -25,7 +25,6 @@ const DURATIONS = [
 export default function AdminPage() {
   const { pin, logout } = useAuth();
   const { settings, updateSettings, isLoading } = useNowPlayingSettings();
-  const [safetyLock, setSafetyLock] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [duration, setDuration] = useState(-2);
   const [customDuration, setCustomDuration] = useState(120);
@@ -59,8 +58,6 @@ export default function AdminPage() {
       setStatus(err instanceof Error ? err.message : "Save failed");
     }
   };
-
-  const isDisabled = safetyLock || isLoading;
 
   if (isLoading) {
     return (
@@ -97,16 +94,6 @@ export default function AdminPage() {
         </div>
 
         <div className="space-y-4">
-          <label className="flex items-center justify-between text-sm text-white/70">
-            Safety lock (Locks you out)
-            <input
-              type="checkbox"
-              checked={safetyLock}
-              onChange={(e) => setSafetyLock(e.target.checked)}
-              className="h-4 w-4 rounded border-white/20 bg-black"
-            />
-          </label>
-
           <div className="space-y-2">
             <label className="text-xs font-medium uppercase tracking-wider text-white/40">
               Presets
@@ -124,7 +111,7 @@ export default function AdminPage() {
                       enabled: true,
                     }))
                   }
-                  disabled={isDisabled}
+                  disabled={isLoading}
                   className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs hover:bg-white/10 disabled:opacity-50"
                 >
                   {p.label}
@@ -143,7 +130,7 @@ export default function AdminPage() {
                   setDraft((prev) => ({ ...prev, enabled: e.target.checked }))
                 }
                 className="h-4 w-4 rounded border-white/20 bg-black"
-                disabled={isDisabled}
+                disabled={isLoading}
               />
             </label>
 
@@ -156,7 +143,7 @@ export default function AdminPage() {
                   setDraft((prev) => ({ ...prev, showImage: e.target.checked }))
                 }
                 className="h-4 w-4 rounded border-white/20 bg-black"
-                disabled={isDisabled}
+                disabled={isLoading}
               />
             </label>
 
@@ -169,7 +156,7 @@ export default function AdminPage() {
                   setDraft((prev) => ({ ...prev, showEqualizer: e.target.checked }))
                 }
                 className="h-4 w-4 rounded border-white/20 bg-black"
-                disabled={isDisabled}
+                disabled={isLoading}
               />
             </label>
 
@@ -182,7 +169,7 @@ export default function AdminPage() {
                   setDraft((prev) => ({ ...prev, lastfmEnabled: e.target.checked }))
                 }
                 className="h-4 w-4 rounded border-white/20 bg-black"
-                disabled={isDisabled}
+                disabled={isLoading}
               />
             </label>
 
@@ -197,7 +184,7 @@ export default function AdminPage() {
                   setDraft((prev) => ({ ...prev, label: e.target.value }))
                 }
                 className="w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 text-white focus:outline-none focus:border-white/30"
-                disabled={isDisabled}
+                disabled={isLoading}
               />
             </div>
 
@@ -212,7 +199,7 @@ export default function AdminPage() {
                   setDraft((prev) => ({ ...prev, title: e.target.value }))
                 }
                 className="w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 text-white focus:outline-none focus:border-white/30"
-                disabled={isDisabled}
+                disabled={isLoading}
               />
             </div>
 
@@ -227,7 +214,7 @@ export default function AdminPage() {
                   setDraft((prev) => ({ ...prev, imageUrl: e.target.value }))
                 }
                 className="w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 text-white focus:outline-none focus:border-white/30"
-                disabled={isDisabled}
+                disabled={isLoading}
               />
             </div>
           </div>
@@ -241,7 +228,7 @@ export default function AdminPage() {
                 <button
                   key={d.label}
                   onClick={() => setDuration(d.value)}
-                  disabled={isDisabled}
+                  disabled={isLoading}
                   className={`rounded-md border px-3 py-1 text-xs transition-colors ${
                     duration === d.value
                       ? "border-primary bg-primary/20 text-white"
@@ -259,7 +246,7 @@ export default function AdminPage() {
                   value={customDuration}
                   onChange={(e) => setCustomDuration(Number(e.target.value))}
                   className="w-24 rounded-md border border-white/10 bg-black/40 px-3 py-1 text-sm text-white"
-                  disabled={isDisabled}
+                  disabled={isLoading}
                 />
                 <span className="text-xs text-white/40">minutes</span>
               </div>
@@ -269,7 +256,7 @@ export default function AdminPage() {
           <button
             onClick={handleSave}
             className="w-full rounded-md bg-white text-black px-4 py-2 text-sm font-bold hover:bg-white/90 disabled:opacity-50 transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)]"
-            disabled={isDisabled}
+            disabled={isLoading}
           >
             Apply to All Users
           </button>
