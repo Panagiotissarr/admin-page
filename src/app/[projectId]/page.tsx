@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
+import { projects } from "@/lib/projects";
 import { useNowPlayingSettings } from "@/lib/nowPlayingSettings";
 import { useAuth } from "@/lib/auth-context";
 import { useCustomPresets, type CustomPreset } from "@/lib/useCustomPresets";
@@ -24,7 +26,11 @@ const DURATIONS = [
   { label: "Custom", value: -1 },
 ];
 
-export default function AdminPage() {
+export default function ProjectAdminPage() {
+  const params = useParams();
+  const projectId = params.projectId as string;
+  const project = projects.find((p) => p.id === projectId);
+
   const { pin, logout } = useAuth();
   const { settings, updateSettings, isLoading } = useNowPlayingSettings();
   const { presets: customPresets, add: addPreset, remove: removePreset, copy, cut, paste, duplicate } = useCustomPresets();
@@ -35,6 +41,18 @@ export default function AdminPage() {
   const [addForm, setAddForm] = useState({ label: "Now playing", title: "My custom track", imageUrl: "/assets/img/logo-mini.png", enabled: true, showEqualizer: true, showImage: true, lastfmEnabled: true });
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; presetId: string } | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  if (!project) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-black p-6 text-white font-sans">
+        <div className="text-center space-y-4">
+          <h1 className="text-2xl font-semibold">Project not found</h1>
+          <p className="text-sm text-white/40">No project with ID &quot;{projectId}&quot;</p>
+          <Link href="/" className="inline-block rounded-md bg-white px-4 py-2 text-xs font-bold text-black hover:bg-white/90">&larr; Dashboard</Link>
+        </div>
+      </div>
+    );
+  }
 
   const formState = useMemo(
     () => ({
@@ -127,7 +145,7 @@ export default function AdminPage() {
       <div className="w-full max-w-xl space-y-6 rounded-magic-out border border-white/10 bg-white/5 p-6 backdrop-blur-md">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold">Admin Dashboard</h1>
+            <h1 className="text-2xl font-semibold">{project.name}</h1>
             <p className="mt-1 text-sm text-white/60">
               Secure panel for real-time website updates.
             </p>

@@ -11,7 +11,7 @@ export const projects: Project[] = [
     id: "sarris-dev",
     name: "sarris.dev",
     description: "Personal portfolio & website",
-    adminPath: "/admin",
+    adminPath: "/sarris-dev",
     icon: "PT",
   },
 ];
