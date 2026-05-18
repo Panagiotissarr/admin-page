@@ -32,6 +32,7 @@ export default function AdminPage() {
   const [duration, setDuration] = useState(-2);
   const [customDuration, setCustomDuration] = useState(120);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [addForm, setAddForm] = useState({ label: "Now playing", title: "My custom track", imageUrl: "/assets/img/logo-mini.png", enabled: true, showEqualizer: true, showImage: true, lastfmEnabled: true });
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; presetId: string } | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -107,31 +108,11 @@ export default function AdminPage() {
     return () => window.removeEventListener("keydown", handleKey);
   }, [ctxMenu, copy, cut, paste, duplicate]);
 
-  const handleAddFormSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const data = new FormData(e.currentTarget);
-    const preset = addPreset({
-      label: String(data.get("label") || ""),
-      title: String(data.get("title") || ""),
-      imageUrl: String(data.get("imageUrl") || ""),
-      enabled: data.get("enabled") === "on",
-      showEqualizer: data.get("showEqualizer") === "on",
-      showImage: data.get("showImage") === "on",
-      lastfmEnabled: data.get("lastfmEnabled") === "on",
-    });
+  const handleAddFormSubmit = useCallback(() => {
+    const preset = addPreset(addForm);
     applyCustomPreset(preset);
     setShowAddForm(false);
-  }, [addPreset, applyCustomPreset]);
-
-  const [addDefaults] = useState({
-    label: "Now playing",
-    title: "My custom track",
-    imageUrl: "/assets/img/logo-mini.png",
-    enabled: true,
-    showEqualizer: true,
-    showImage: true,
-    lastfmEnabled: true,
-  });
+  }, [addForm, addPreset, applyCustomPreset]);
 
   if (isLoading) {
     return (
@@ -187,38 +168,38 @@ export default function AdminPage() {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6">
             <div className="w-full max-w-md space-y-4 rounded-magic-out border border-white/10 bg-zinc-900 p-6 backdrop-blur-md">
               <h2 className="text-base font-semibold">New Preset</h2>
-              <form onSubmit={handleAddFormSubmit} className="space-y-3">
+              <div className="space-y-3">
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-white/40">Label</label>
-                  <input name="label" defaultValue={addDefaults.label} className="w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm text-white focus:outline-none focus:border-white/30" />
+                  <input value={addForm.label} onChange={(e) => setAddForm((f) => ({ ...f, label: e.target.value }))} className="w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm text-white focus:outline-none focus:border-white/30" />
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-white/40">Title</label>
-                  <input name="title" defaultValue={addDefaults.title} className="w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm text-white focus:outline-none focus:border-white/30" />
+                  <input value={addForm.title} onChange={(e) => setAddForm((f) => ({ ...f, title: e.target.value }))} className="w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm text-white focus:outline-none focus:border-white/30" />
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-white/40">Image URL</label>
-                  <input name="imageUrl" defaultValue={addDefaults.imageUrl} className="w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm text-white focus:outline-none focus:border-white/30" />
+                  <input value={addForm.imageUrl} onChange={(e) => setAddForm((f) => ({ ...f, imageUrl: e.target.value }))} className="w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm text-white focus:outline-none focus:border-white/30" />
                 </div>
                 <div className="flex flex-wrap gap-4">
                   <label className="flex items-center gap-2 text-xs text-white/60">
-                    <input name="enabled" type="checkbox" defaultChecked={addDefaults.enabled} className="h-3.5 w-3.5 rounded border-white/20 bg-black" /> Enabled
+                    <input type="checkbox" checked={addForm.enabled} onChange={(e) => setAddForm((f) => ({ ...f, enabled: e.target.checked }))} className="h-3.5 w-3.5 rounded border-white/20 bg-black" /> Enabled
                   </label>
                   <label className="flex items-center gap-2 text-xs text-white/60">
-                    <input name="showImage" type="checkbox" defaultChecked={addDefaults.showImage} className="h-3.5 w-3.5 rounded border-white/20 bg-black" /> Show image
+                    <input type="checkbox" checked={addForm.showImage} onChange={(e) => setAddForm((f) => ({ ...f, showImage: e.target.checked }))} className="h-3.5 w-3.5 rounded border-white/20 bg-black" /> Show image
                   </label>
                   <label className="flex items-center gap-2 text-xs text-white/60">
-                    <input name="showEqualizer" type="checkbox" defaultChecked={addDefaults.showEqualizer} className="h-3.5 w-3.5 rounded border-white/20 bg-black" /> Equalizer
+                    <input type="checkbox" checked={addForm.showEqualizer} onChange={(e) => setAddForm((f) => ({ ...f, showEqualizer: e.target.checked }))} className="h-3.5 w-3.5 rounded border-white/20 bg-black" /> Equalizer
                   </label>
                   <label className="flex items-center gap-2 text-xs text-white/60">
-                    <input name="lastfmEnabled" type="checkbox" defaultChecked={addDefaults.lastfmEnabled} className="h-3.5 w-3.5 rounded border-white/20 bg-black" /> Last.fm
+                    <input type="checkbox" checked={addForm.lastfmEnabled} onChange={(e) => setAddForm((f) => ({ ...f, lastfmEnabled: e.target.checked }))} className="h-3.5 w-3.5 rounded border-white/20 bg-black" /> Last.fm
                   </label>
                 </div>
                 <div className="flex gap-2 pt-2">
-                  <button type="submit" className="flex-1 rounded-md bg-white px-4 py-2 text-xs font-bold text-black hover:bg-white/90">Save & Apply</button>
-                  <button type="button" onClick={() => setShowAddForm(false)} className="rounded-md border border-white/10 bg-white/5 px-4 py-2 text-xs text-white/60 hover:bg-white/10">Cancel</button>
+                  <button onClick={handleAddFormSubmit} className="flex-1 rounded-md bg-white px-4 py-2 text-xs font-bold text-black hover:bg-white/90">Save & Apply</button>
+                  <button onClick={() => setShowAddForm(false)} className="rounded-md border border-white/10 bg-white/5 px-4 py-2 text-xs text-white/60 hover:bg-white/10">Cancel</button>
                 </div>
-              </form>
+              </div>
             </div>
           </div>
         )}
@@ -228,7 +209,7 @@ export default function AdminPage() {
             <div className="flex items-center justify-between">
               <label className="text-xs font-medium uppercase tracking-wider text-white/40">Presets</label>
               <button
-                onClick={() => setShowAddForm(true)}
+                onClick={() => { setAddForm({ label: draft.label, title: draft.title, imageUrl: draft.imageUrl, enabled: draft.enabled, showEqualizer: draft.showEqualizer, showImage: draft.showImage, lastfmEnabled: draft.lastfmEnabled }); setShowAddForm(true); }}
                 className="rounded-full border border-primary/40 bg-primary/10 px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary hover:bg-primary/20 transition-colors"
               >
                 + Add
