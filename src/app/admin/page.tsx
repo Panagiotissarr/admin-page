@@ -186,7 +186,7 @@ export default function AdminPage() {
         {showAddForm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6">
             <div className="w-full max-w-md space-y-4 rounded-magic-out border border-white/10 bg-zinc-900 p-6 backdrop-blur-md">
-              <h2 className="text-base font-semibold">New Custom Preset</h2>
+              <h2 className="text-base font-semibold">New Preset</h2>
               <form onSubmit={handleAddFormSubmit} className="space-y-3">
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-white/40">Label</label>
