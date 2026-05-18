@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
 import { useNowPlayingSettings } from "@/lib/nowPlayingSettings";
 import { useAuth } from "@/lib/auth-context";
+import { useCustomPresets, type CustomPreset } from "@/lib/useCustomPresets";
+import { ContextMenu, type ContextMenuItem } from "@/components/context-menu";
 
-const PRESETS = [
+const BUILTIN_PRESETS = [
   { label: "Now playing", title: "Ambient focus mix", imageUrl: "/assets/img/logo-mini.png" },
   { label: "Now eating", title: "Having a snack", imageUrl: "/assets/img/logo-mini.png" },
   { label: "Now coding", title: "Working on projects", imageUrl: "/assets/img/logo-mini.png" },
@@ -25,9 +27,13 @@ const DURATIONS = [
 export default function AdminPage() {
   const { pin, logout } = useAuth();
   const { settings, updateSettings, isLoading } = useNowPlayingSettings();
+  const { presets: customPresets, add: addPreset, remove: removePreset, copy, cut, paste, duplicate } = useCustomPresets();
   const [status, setStatus] = useState<string | null>(null);
   const [duration, setDuration] = useState(-2);
   const [customDuration, setCustomDuration] = useState(120);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; presetId: string } | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const formState = useMemo(
     () => ({
@@ -48,6 +54,22 @@ export default function AdminPage() {
     setDraft(formState);
   }, [formState]);
 
+  const applyPreset = useCallback((p: { label: string; title: string; imageUrl: string; enabled?: boolean }) => {
+    setDraft((prev) => ({ ...prev, label: p.label, title: p.title, imageUrl: p.imageUrl, enabled: p.enabled ?? true }));
+  }, []);
+
+  const applyCustomPreset = useCallback((p: CustomPreset) => {
+    setDraft({
+      enabled: p.enabled,
+      label: p.label,
+      title: p.title,
+      imageUrl: p.imageUrl,
+      showEqualizer: p.showEqualizer,
+      showImage: p.showImage,
+      lastfmEnabled: p.lastfmEnabled,
+    });
+  }, []);
+
   const handleSave = async () => {
     setStatus("Saving...");
     try {
@@ -58,6 +80,58 @@ export default function AdminPage() {
       setStatus(err instanceof Error ? err.message : "Save failed");
     }
   };
+
+  const handleContextAction = useCallback((action: string, presetId: string) => {
+    switch (action) {
+      case "copy": copy(presetId); break;
+      case "cut": cut(presetId); break;
+      case "paste": paste(); break;
+      case "duplicate": duplicate(presetId); break;
+      case "delete": removePreset(presetId); break;
+    }
+  }, [copy, cut, paste, duplicate, removePreset]);
+
+  useEffect(() => {
+    if (!ctxMenu) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key.toLowerCase()) {
+          case "c": copy(ctxMenu.presetId); setCtxMenu(null); break;
+          case "x": cut(ctxMenu.presetId); setCtxMenu(null); break;
+          case "v": paste(); setCtxMenu(null); break;
+          case "d": duplicate(ctxMenu.presetId); setCtxMenu(null); e.preventDefault(); break;
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [ctxMenu, copy, cut, paste, duplicate]);
+
+  const handleAddFormSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const data = new FormData(e.currentTarget);
+    const preset = addPreset({
+      label: String(data.get("label") || ""),
+      title: String(data.get("title") || ""),
+      imageUrl: String(data.get("imageUrl") || ""),
+      enabled: data.get("enabled") === "on",
+      showEqualizer: data.get("showEqualizer") === "on",
+      showImage: data.get("showImage") === "on",
+      lastfmEnabled: data.get("lastfmEnabled") === "on",
+    });
+    applyCustomPreset(preset);
+    setShowAddForm(false);
+  }, [addPreset, applyCustomPreset]);
+
+  const [addDefaults] = useState({
+    label: "Now playing",
+    title: "My custom track",
+    imageUrl: "/assets/img/logo-mini.png",
+    enabled: true,
+    showEqualizer: true,
+    showImage: true,
+    lastfmEnabled: true,
+  });
 
   if (isLoading) {
     return (
@@ -93,29 +167,107 @@ export default function AdminPage() {
           </div>
         </div>
 
+        {ctxMenu && (
+          <ContextMenu
+            x={ctxMenu.x}
+            y={ctxMenu.y}
+            onClose={() => setCtxMenu(null)}
+            items={[
+              { label: "Cut", shortcut: "Ctrl+X", action: () => handleContextAction("cut", ctxMenu.presetId) },
+              { label: "Copy", shortcut: "Ctrl+C", action: () => handleContextAction("copy", ctxMenu.presetId) },
+              { label: "Paste", shortcut: "Ctrl+V", action: () => handleContextAction("paste", ctxMenu.presetId) },
+              { label: "Duplicate", shortcut: "Ctrl+D", action: () => handleContextAction("duplicate", ctxMenu.presetId) },
+              { divider: true, label: "", action: () => {} },
+              { label: "Delete", action: () => handleContextAction("delete", ctxMenu.presetId) },
+            ] as ContextMenuItem[]}
+          />
+        )}
+
+        {showAddForm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6">
+            <div className="w-full max-w-md space-y-4 rounded-magic-out border border-white/10 bg-zinc-900 p-6 backdrop-blur-md">
+              <h2 className="text-base font-semibold">New Custom Preset</h2>
+              <form onSubmit={handleAddFormSubmit} className="space-y-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-white/40">Label</label>
+                  <input name="label" defaultValue={addDefaults.label} className="w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm text-white focus:outline-none focus:border-white/30" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-white/40">Title</label>
+                  <input name="title" defaultValue={addDefaults.title} className="w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm text-white focus:outline-none focus:border-white/30" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-white/40">Image URL</label>
+                  <input name="imageUrl" defaultValue={addDefaults.imageUrl} className="w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm text-white focus:outline-none focus:border-white/30" />
+                </div>
+                <div className="flex flex-wrap gap-4">
+                  <label className="flex items-center gap-2 text-xs text-white/60">
+                    <input name="enabled" type="checkbox" defaultChecked={addDefaults.enabled} className="h-3.5 w-3.5 rounded border-white/20 bg-black" /> Enabled
+                  </label>
+                  <label className="flex items-center gap-2 text-xs text-white/60">
+                    <input name="showImage" type="checkbox" defaultChecked={addDefaults.showImage} className="h-3.5 w-3.5 rounded border-white/20 bg-black" /> Show image
+                  </label>
+                  <label className="flex items-center gap-2 text-xs text-white/60">
+                    <input name="showEqualizer" type="checkbox" defaultChecked={addDefaults.showEqualizer} className="h-3.5 w-3.5 rounded border-white/20 bg-black" /> Equalizer
+                  </label>
+                  <label className="flex items-center gap-2 text-xs text-white/60">
+                    <input name="lastfmEnabled" type="checkbox" defaultChecked={addDefaults.lastfmEnabled} className="h-3.5 w-3.5 rounded border-white/20 bg-black" /> Last.fm
+                  </label>
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <button type="submit" className="flex-1 rounded-md bg-white px-4 py-2 text-xs font-bold text-black hover:bg-white/90">Save & Apply</button>
+                  <button type="button" onClick={() => setShowAddForm(false)} className="rounded-md border border-white/10 bg-white/5 px-4 py-2 text-xs text-white/60 hover:bg-white/10">Cancel</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
         <div className="space-y-4">
           <div className="space-y-2">
-            <label className="text-xs font-medium uppercase tracking-wider text-white/40">
-              Presets
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-medium uppercase tracking-wider text-white/40">Presets</label>
+              <button
+                onClick={() => setShowAddForm(true)}
+                className="rounded-full border border-primary/40 bg-primary/10 px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary hover:bg-primary/20 transition-colors"
+              >
+                + Add
+              </button>
+            </div>
             <div className="flex flex-wrap gap-2">
-              {PRESETS.map((p) => (
+              {BUILTIN_PRESETS.map((p) => (
                 <button
                   key={p.label}
-                  onClick={() =>
-                    setDraft((prev) => ({
-                      ...prev,
-                      label: p.label,
-                      title: p.title,
-                      imageUrl: p.imageUrl,
-                      enabled: true,
-                    }))
-                  }
+                  onClick={() => applyPreset(p)}
                   disabled={isLoading}
                   className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs hover:bg-white/10 disabled:opacity-50"
                 >
                   {p.label}
                 </button>
+              ))}
+              {customPresets.map((p) => (
+                <div key={p.id} className="relative group">
+                  <button
+                    onClick={() => applyCustomPreset(p)}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      setSelectedId(p.id);
+                      setCtxMenu({ x: e.clientX, y: e.clientY, presetId: p.id });
+                    }}
+                    disabled={isLoading}
+                    className="rounded-full border border-white/10 bg-white/5 px-3 py-1 pr-7 text-xs hover:bg-white/10 disabled:opacity-50 relative"
+                  >
+                    {p.label}
+                    <span
+                      onClick={(e) => { e.stopPropagation(); removePreset(p.id); }}
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 hidden group-hover:block text-red-400 hover:text-red-300 cursor-pointer"
+                    >
+                      <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                      </svg>
+                    </span>
+                  </button>
+                </div>
               ))}
             </div>
           </div>
@@ -126,9 +278,7 @@ export default function AdminPage() {
               <input
                 type="checkbox"
                 checked={draft.enabled}
-                onChange={(e) =>
-                  setDraft((prev) => ({ ...prev, enabled: e.target.checked }))
-                }
+                onChange={(e) => setDraft((prev) => ({ ...prev, enabled: e.target.checked }))}
                 className="h-4 w-4 rounded border-white/20 bg-black"
                 disabled={isLoading}
               />
@@ -139,9 +289,7 @@ export default function AdminPage() {
               <input
                 type="checkbox"
                 checked={draft.showImage}
-                onChange={(e) =>
-                  setDraft((prev) => ({ ...prev, showImage: e.target.checked }))
-                }
+                onChange={(e) => setDraft((prev) => ({ ...prev, showImage: e.target.checked }))}
                 className="h-4 w-4 rounded border-white/20 bg-black"
                 disabled={isLoading}
               />
@@ -152,9 +300,7 @@ export default function AdminPage() {
               <input
                 type="checkbox"
                 checked={draft.showEqualizer}
-                onChange={(e) =>
-                  setDraft((prev) => ({ ...prev, showEqualizer: e.target.checked }))
-                }
+                onChange={(e) => setDraft((prev) => ({ ...prev, showEqualizer: e.target.checked }))}
                 className="h-4 w-4 rounded border-white/20 bg-black"
                 disabled={isLoading}
               />
@@ -165,54 +311,40 @@ export default function AdminPage() {
               <input
                 type="checkbox"
                 checked={draft.lastfmEnabled}
-                onChange={(e) =>
-                  setDraft((prev) => ({ ...prev, lastfmEnabled: e.target.checked }))
-                }
+                onChange={(e) => setDraft((prev) => ({ ...prev, lastfmEnabled: e.target.checked }))}
                 className="h-4 w-4 rounded border-white/20 bg-black"
                 disabled={isLoading}
               />
             </label>
 
             <div className="space-y-2">
-              <label className="text-xs font-medium uppercase tracking-wider text-white/40">
-                Label
-              </label>
+              <label className="text-xs font-medium uppercase tracking-wider text-white/40">Label</label>
               <input
                 type="text"
                 value={draft.label}
-                onChange={(e) =>
-                  setDraft((prev) => ({ ...prev, label: e.target.value }))
-                }
+                onChange={(e) => setDraft((prev) => ({ ...prev, label: e.target.value }))}
                 className="w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 text-white focus:outline-none focus:border-white/30"
                 disabled={isLoading}
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-medium uppercase tracking-wider text-white/40">
-                Title
-              </label>
+              <label className="text-xs font-medium uppercase tracking-wider text-white/40">Title</label>
               <input
                 type="text"
                 value={draft.title}
-                onChange={(e) =>
-                  setDraft((prev) => ({ ...prev, title: e.target.value }))
-                }
+                onChange={(e) => setDraft((prev) => ({ ...prev, title: e.target.value }))}
                 className="w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 text-white focus:outline-none focus:border-white/30"
                 disabled={isLoading}
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-medium uppercase tracking-wider text-white/40">
-                Image URL
-              </label>
+              <label className="text-xs font-medium uppercase tracking-wider text-white/40">Image URL</label>
               <input
                 type="text"
                 value={draft.imageUrl}
-                onChange={(e) =>
-                  setDraft((prev) => ({ ...prev, imageUrl: e.target.value }))
-                }
+                onChange={(e) => setDraft((prev) => ({ ...prev, imageUrl: e.target.value }))}
                 className="w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 text-white focus:outline-none focus:border-white/30"
                 disabled={isLoading}
               />
@@ -220,9 +352,7 @@ export default function AdminPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-medium uppercase tracking-wider text-white/40">
-              Duration
-            </label>
+            <label className="text-xs font-medium uppercase tracking-wider text-white/40">Duration</label>
             <div className="flex flex-wrap gap-2">
               {DURATIONS.map((d) => (
                 <button
