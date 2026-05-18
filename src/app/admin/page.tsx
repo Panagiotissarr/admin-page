@@ -241,7 +241,7 @@ export default function AdminPage() {
                     {p.title}
                     <span
                       onClick={(e) => { e.stopPropagation(); removePreset(p.id); }}
-                      className="absolute right-1.5 top-1/2 -translate-y-1/2 hidden group-hover:block text-red-400 hover:text-red-300 cursor-pointer"
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 invisible group-hover:visible text-red-400 hover:text-red-300 cursor-pointer"
                     >
                       <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
