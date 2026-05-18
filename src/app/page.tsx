@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { projects } from "@/lib/projects";
 import { useAuth } from "@/lib/auth-context";
 
@@ -36,7 +37,7 @@ export default function DashboardPage() {
 
         <div className="space-y-3">
           {projects.map((project) => (
-            <a
+            <Link
               key={project.id}
               href={project.adminPath}
               className="flex items-center gap-4 rounded-magic-in border border-white/10 bg-white/[0.03] p-4 backdrop-blur-md transition-all hover:border-white/20 hover:bg-white/[0.06]"
@@ -50,7 +51,7 @@ export default function DashboardPage() {
                   {project.description}
                 </div>
               </div>
-            </a>
+            </Link>
           ))}
         </div>
 

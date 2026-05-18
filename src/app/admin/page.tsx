@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useNowPlayingSettings } from "@/lib/nowPlayingSettings";
 import { useAuth } from "@/lib/auth-context";
 
@@ -80,12 +81,12 @@ export default function AdminPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <a
+            <Link
               href="/"
               className="shrink-0 text-xs text-white/40 hover:text-white/80 transition-colors"
             >
               &larr; Dashboard
-            </a>
+            </Link>
             <button
               onClick={logout}
               className="shrink-0 text-xs text-white/40 hover:text-red-400 transition-colors"
