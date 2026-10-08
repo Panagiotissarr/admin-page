@@ -14,4 +14,11 @@ export const projects: Project[] = [
     adminPath: "/sarris-dev",
     icon: "PT",
   },
+  {
+    id: "cloud",
+    name: "Cloud",
+    description: "API platform — manage API keys",
+    adminPath: "/cloud",
+    icon: "CL",
+  },
 ];
